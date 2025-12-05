@@ -1,23 +1,34 @@
-# Dijkstra – Weighted shortest path
 import heapq
 
-def dijkstra(graph, start):
-    # graph is adjacency list: { A: [(B, weight), (C, weight)] }
-    dist = {node: float('inf') for node in graph}
-    dist[start] = 0
-    parent = {start: None}
+def dijkstra(adj, start, end):
+    if start not in adj or end not in adj:
+        return []
+
     pq = [(0, start)]
+    dist = {start: 0}
+    parent = {start: None}
 
     while pq:
-        current_dist, node = heapq.heappop(pq)
-        if current_dist > dist[node]:
-            continue
+        curr_dist, node = heapq.heappop(pq)
 
-        for neighbor, weight in graph[node]:
-            new_dist = current_dist + weight
-            if new_dist < dist[neighbor]:
+        if node == end:
+            break
+
+        for neighbor, weight in adj.get(node, []):
+            new_dist = curr_dist + weight
+
+            if neighbor not in dist or new_dist < dist[neighbor]:
                 dist[neighbor] = new_dist
                 parent[neighbor] = node
                 heapq.heappush(pq, (new_dist, neighbor))
 
-    return dist, parent
+    if end not in parent:
+        return []
+
+    # reconstruct path
+    path = []
+    curr = end
+    while curr is not None:
+        path.append(curr)
+        curr = parent[curr]
+    return path[::-1]

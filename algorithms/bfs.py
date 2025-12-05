@@ -1,29 +1,30 @@
-# BFS – Fewest hops
 from collections import deque
 
-def bfs(graph, start, goal):
+def bfs(adj, start, end):
+    if start not in adj or end not in adj:
+        return []
+
     queue = deque([start])
-    visited = set([start])
-    parent = {start: None}
+    visited = {start: None}
 
     while queue:
         node = queue.popleft()
-        if node == goal:
+
+        if node == end:
             break
 
-        for neighbor in graph.get(node, []):
+        for neighbor, _ in adj.get(node, []):
             if neighbor not in visited:
-                visited.add(neighbor)
-                parent[neighbor] = node
+                visited[neighbor] = node
                 queue.append(neighbor)
 
     # reconstruct path
-    if goal not in parent:
-        return []  # unreachable
+    if end not in visited:
+        return []
 
     path = []
-    cur = goal
-    while cur is not None:
-        path.append(cur)
-        cur = parent[cur]
-    return list(reversed(path))
+    curr = end
+    while curr is not None:
+        path.append(curr)
+        curr = visited[curr]
+    return path[::-1]
