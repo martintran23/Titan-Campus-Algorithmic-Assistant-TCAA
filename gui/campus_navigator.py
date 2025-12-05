@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from algorithms.bfs import bfs
 from algorithms.dfs import dfs
 from algorithms.dijkstra import dijkstra
+from algorithms.prim import prim_mst
 
 NODE_RADIUS = 18
 
@@ -86,7 +87,7 @@ class GraphCanvas(ttk.Frame):
             self.handle_connect_mode(clicked)
             return
 
-        # If clicked on a node: select it
+        # Select existing node
         if clicked:
             self.selected = clicked
             node = self.graph.nodes[clicked]
@@ -96,7 +97,7 @@ class GraphCanvas(ttk.Frame):
             self.nav_callback("select", clicked)
             return
 
-        # Otherwise add a new node
+        # Otherwise add new node
         name = f"N{len(self.graph.nodes) + 1}"
         self.graph.add_node(name, x, y)
         self.draw_node(self.graph.nodes[name])
@@ -215,6 +216,7 @@ class CampusNavigator(ttk.Frame):
         super().__init__(parent)
         self.start = None
         self.end = None
+        self.mode = None
 
         # HEADER
         ttk.Label(self, text="Campus Navigator", font=("Segoe UI", 16, "bold")).grid(
@@ -228,9 +230,13 @@ class CampusNavigator(ttk.Frame):
         ttk.Button(control, text="Connect Nodes", command=self.enable_connect).pack(pady=4)
         ttk.Button(control, text="Set Start", command=lambda: self.set_mode("start")).pack(pady=4)
         ttk.Button(control, text="Set End", command=lambda: self.set_mode("end")).pack(pady=4)
+
         ttk.Button(control, text="Run BFS", command=self.run_bfs).pack(pady=4)
         ttk.Button(control, text="Run DFS", command=self.run_dfs).pack(pady=4)
         ttk.Button(control, text="Run Dijkstra", command=self.run_dijkstra).pack(pady=4)
+
+        # NEW — RUN PRIM MST
+        ttk.Button(control, text="Run Prim MST", command=self.run_prim).pack(pady=4)
 
         # OUTPUT
         self.output = tk.Text(self, width=50, height=15)
@@ -275,7 +281,7 @@ class CampusNavigator(ttk.Frame):
         self.mode = None
 
     # --------------------------------------------------------
-    # ALGORITHMS
+    # DISPLAY ADJ LIST
     # --------------------------------------------------------
 
     def update_adj_list(self):
@@ -283,6 +289,10 @@ class CampusNavigator(ttk.Frame):
         self.adj_box.delete("1.0", tk.END)
         for k, v in adj.items():
             self.adj_box.insert(tk.END, f"{k}: {v}\n")
+
+    # --------------------------------------------------------
+    # BFS
+    # --------------------------------------------------------
 
     def run_bfs(self):
         if not (self.start and self.end):
@@ -294,6 +304,10 @@ class CampusNavigator(ttk.Frame):
         self.output.insert(tk.END, f"BFS Path: {path}\n")
         self.canvas_panel.highlight_path(path)
 
+    # --------------------------------------------------------
+    # DFS
+    # --------------------------------------------------------
+
     def run_dfs(self):
         if not (self.start and self.end):
             return messagebox.showerror("Error", "Set start and end nodes first.")
@@ -304,6 +318,10 @@ class CampusNavigator(ttk.Frame):
         self.output.insert(tk.END, f"DFS Path: {path}\n")
         self.canvas_panel.highlight_path(path)
 
+    # --------------------------------------------------------
+    # DIJKSTRA
+    # --------------------------------------------------------
+
     def run_dijkstra(self):
         if not (self.start and self.end):
             return messagebox.showerror("Error", "Set start and end nodes first.")
@@ -313,3 +331,34 @@ class CampusNavigator(ttk.Frame):
 
         self.output.insert(tk.END, f"Dijkstra Path: {path}\n")
         self.canvas_panel.highlight_path(path)
+
+    # --------------------------------------------------------
+    # PRIM MST  (YOUR prim.py)
+    # --------------------------------------------------------
+
+    def run_prim(self):
+        adj = self.canvas_panel.graph.adjacency_list()
+
+        if not adj:
+            return messagebox.showerror("Error", "Graph is empty.")
+
+        # Use start if set, otherwise first available node
+        start_node = self.start or next(iter(adj))
+
+        # prim_mst returns: (mst_edges_list, total_weight)
+        mst_edges, total_weight = prim_mst(adj, start_node)
+
+        print("DEBUG MST =", (mst_edges, total_weight))
+
+        # Output
+        self.output.insert(tk.END, "=== Prim MST ===\n")
+        self.output.insert(tk.END, f"Total Weight: {total_weight}\n")
+
+        for u, v, w in mst_edges:
+            self.output.insert(tk.END, f"{u} -- {v} (w={w})\n")
+        self.output.insert(tk.END, "\n")
+
+        # Highlight edges visually
+        highlight_edges = {tuple(sorted([u, v])) for u, v, w in mst_edges}
+        self.canvas_panel.redraw(highlight_path=highlight_edges)
+
