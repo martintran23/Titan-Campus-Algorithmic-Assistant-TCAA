@@ -19,6 +19,7 @@ Implements:
 - Prim’s Minimum Spanning Tree (MST)
 
 Users can:
+- Add and connect nodes
 - Select start and end buildings
 - View paths, distances, traversal orders, and MST edges
 
